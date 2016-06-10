@@ -1,0 +1,4 @@
+set autoindent
+set expandtab
+set shiftwidth=4
+" See .gvimrc for gui commands

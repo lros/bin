@@ -1,0 +1,13 @@
+alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
+export VISUAL=/usr/bin/vi
+function xvi () {
+    for file in "$@" ; do
+        gvim $file
+    done
+}
+for p in "$HOME/build-bin" "$HOME/bin" ; do
+    case "$PATH" in
+        *$p*) ;;  # Already present.  BTW, spaces do work in $p.
+        *) PATH="$PATH:$p" ;;
+    esac
+done
