@@ -18,21 +18,27 @@ case "$SPECIAL_SHELL" in
         ;;
 
     ARAM)
-        # Runtime environment for ARAM software
+        # Runtime environment for ARAM software on Ubuntu
 
         #echo "On the way in."
         echo -e "\e]0;ARAM Shell\a"
         PS1='\e[7mARAM Shell: \w $\e[0m '
-        # Root of the mobilesoftware repository
-        root="$HOME/home/mobilesoftware"
-        export ARIA="$root/Aria"
-        export ARNL="$root/Arnl"
-        export LD_LIBRARY_PATH="$ARIA/lib:$ARNL/lib"
+        if false; then
+            # Older approach that confuses build and run.
+            root="$HOME/home/mobilesoftware"
+            export ARIA="$root/Aria"
+            export ARNL="$root/Arnl"
+            export LD_LIBRARY_PATH="$ARIA/lib:$ARNL/lib"
+        else
+            export ARIA="$HOME/home/ubuntu"
+            export ARNL="$ARIA"
+            export LD_LIBRARY_PATH="$HOME/home/ubuntu/lib"
+        fi
         unset root
         ;;
 
     '')
-        # Regular shell
+        # This is a regular shell
         function bsh () {
             echo Entering build shell, part 1
             # Root of the chroot environment
