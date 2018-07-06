@@ -1,28 +1,39 @@
 # Personal modifications, leaving .bashrc untouched.
 
+# Notes on setting PS1:
+# See the PROMPTING section in 'man bash'.
+# See https://www.xfree86.org/4.8.0/ctlseqs.html.
+# \[...\] surrounds nonprinting text - so bash knows how to backspace.
+# \e]0;...\a sets window/icon title.
+# \e[...m sets character attributes such as color for following text.
+#    attribute(s) are 0-normal, 1-bold, 32-green, 34-blue, separated by ;
+
+# I replace the default user@host of PS1 with whatever I call the special
+# shell that's running, or the hostname for a normal shell.  I do this by
+# having the prompt use the same variable as this file keys off of.
+
+# Set the window/icon title:
+PS1='\[\e]0;${SPECIAL_SHELL:-\h}: \w\a\]'
+# Set the first part of the prompt:
+PS1+='\[\e[1;32m\]${SPECIAL_SHELL:-\h}\[\e[0m\]:'
+# Set the second part of the prompt:
+PS1+='\[\e[1;34m\]\w\[\e[0m\]\$ '
+
 # Set up a special shell if appropriate.
 
 case "$SPECIAL_SHELL" in
-    BUILD)
+    ChrootXDev)
         # Chroot cross-development environment
 
         #echo "On the way in."
-        echo Entering build shell, part 2
-        # esc]0;titlebel
-        # Set the window (and icon) title to title.
-        echo -e "\e]0;Build Shell\a"
-        # esc[7m - set inverse; esc[0m - normal
-        PS1='\e[7mBuild Shell: \w $\e[0m '
         cd ~/mobilesoftware
         source vars
         ;;
 
-    ARAM)
+    AramRuntime)
         # Runtime environment for ARAM software on Ubuntu
 
         #echo "On the way in."
-        echo -e "\e]0;ARAM Shell\a"
-        PS1='\e[7mARAM Shell: \w $\e[0m '
         if false; then
             # Older approach that confuses build and run.
             root="$HOME/home/mobilesoftware"
@@ -54,11 +65,11 @@ case "$SPECIAL_SHELL" in
             fi
 
             # Incantation to get into the environment
-            sudo -E SPECIAL_SHELL=BUILD chroot "$root" su -p - $USER
+            sudo -E SPECIAL_SHELL=ChrootXDev chroot "$root" su -p - $USER
             unset root
         }
         function aramsh () {
-            SPECIAL_SHELL=ARAM bash
+            SPECIAL_SHELL=AramRuntime bash
         }
         ;;
 esac
