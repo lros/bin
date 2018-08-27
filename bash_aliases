@@ -28,32 +28,35 @@ case "$SPECIAL_SHELL" in
         #echo "On the way in."
         cd ~/mobilesoftware
         source vars
+        cd $CURDIR
+        unset CURDIR
         ;;
 
     AramRuntime)
         # Runtime environment for ARAM software on Ubuntu
 
         #echo "On the way in."
-        if false; then
-            # Older approach that confuses build and run.
-            root="$HOME/home/mobilesoftware"
-            export ARIA="$root/Aria"
-            export ARNL="$root/Arnl"
-            export LD_LIBRARY_PATH="$ARIA/lib:$ARNL/lib"
-        else
-            export ARIA="$HOME/home/ubuntu"
-            export ARNL="$ARIA"
-            export LD_LIBRARY_PATH="$HOME/home/ubuntu/lib"
-        fi
-        unset root
+        export ARIA="$HOME/home/ubuntu"
+        export ARNL="$ARIA"
+        export LD_LIBRARY_PATH="$HOME/home/ubuntu/lib"
         ;;
 
     '')
         # This is a regular shell
         function bsh () {
-            echo Entering build shell, part 1
             # Root of the chroot environment
             root="$HOME/Robot-MTX"
+
+            # Try to find the current directory within the chroot
+            absHere=$(pwd -P)
+            case "$absHere" in
+                $root/*)
+                    curDir=${absHere:${#root}}
+                    ;;
+                *)
+                    curDir=.
+            esac
+            unset absHere
 
             # Make sure the bind mounts are mounted.
             if [ ! -e "$root/dev/zero" ]; then
@@ -65,7 +68,8 @@ case "$SPECIAL_SHELL" in
             fi
 
             # Incantation to get into the environment
-            sudo -E SPECIAL_SHELL=ChrootXDev chroot "$root" su -p - $USER
+            sudo -E SPECIAL_SHELL=ChrootXDev CURDIR=$curDir \
+                    chroot "$root" su -p - $USER
             unset root
         }
         function aramsh () {
