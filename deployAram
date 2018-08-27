@@ -13,7 +13,7 @@ ips=(
 
 # If we're in a mobilesoftware repo, cd to the top of the repo.
 while [ ! -d .git -o ! -d AramServer ]; do
-    if [ "$CWD" == / -o -z "$CWD" ]; then
+    if [ "$PWD" == / -o -z "$PWD" ]; then
         echo Not in a mobilesoftware repo.
         exit 1
     fi
@@ -41,10 +41,15 @@ let n=${#files[*]} || true  # don't fail the script if n is set to 0
 
 echo Deploying $latest
 
+# Prevent ssh from doing host key checking, since the host keys of the VMs
+# change frequently.
+sshNoHost="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
 for ip in "${ips[@]}" ; do
     echo to $ip
-    sshpass -proot scp $latest root@$ip:/mnt/rdos
-    sshpass -proot ssh root@$ip "ln -s /mnt/rdos/$latest /mnt/rdsys/home/admin/"
+    sshpass -proot scp $sshNoHost $latest root@$ip:/mnt/rdos
+    linkCmd="ln -s /mnt/rdos/$latest /mnt/rdsys/home/admin/"
+    sshpass -proot ssh $sshNoHost root@$ip "$linkCmd"
     sleep 1
 done
 
