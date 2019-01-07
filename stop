@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+line=$(ps uw | grep calibServerPylonNoSound | grep -v grep)
+
+echo $line
+
+kill -9 $(echo $line | cut -d ' ' -f2)

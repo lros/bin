@@ -8,7 +8,8 @@ set -e
 # Push aramServer to the EM of a simulated fleet,
 # or to all the robots of a real fleet.
 ips=(
-    10.0.207.231
+    10.151.193.74
+    #10.0.207.231
 )
 
 # If we're in a mobilesoftware repo, cd to the top of the repo.

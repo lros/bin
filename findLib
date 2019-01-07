@@ -1,0 +1,63 @@
+#!/bin/bash
+
+set -e
+
+pattern="$1"
+echo "Searching for a library that defines $pattern ..."
+
+mobsof=~/home/mobilesoftware
+
+libdir=$mobsof/AramServer/lib
+
+libs=(
+    libAdeptMobileCommon.so
+    libAramAccuracyFramework.so
+    libAramCentral.so
+    libAramServer.so
+    libAramSound.a
+    libArEthernetIP.so
+    libArFirmwareDownload.so
+    libAria.so
+    libArLicensing.so
+    libArMapSuite.so
+    libArNetAudio.so
+    libArNetworking.so
+    libArnl.so
+    libArSimpleMapping.so
+    libArSpeechSynth_Acapela.so
+    libArSpeechSynth_Cepstral.so
+    libArVideoEx.so
+    libArVideoOmni.so
+    libArVideo.so
+    libbabile.so
+    libBaseArnl.so
+    libcvblob.so
+    libdc1394.so
+    libminizip.so
+    libMogs.so
+    libmsl.so
+    libnscube.so
+    libopencv_calib3d.so
+    libopencv_contrib.so
+    libopencv_core.so
+    libopencv_features2d.so
+    libopencv_flann.so
+    libopencv_gpu.so
+    libopencv_highgui.so
+    libopencv_imgproc.so
+    libopencv_legacy.so
+    libopencv_ml.so
+    libopencv_objdetect.so
+    libopencv_ts.so
+    libopencv_video.so
+    libOverheadLoc.so
+    libswift.so
+    libz.so
+)
+
+for lib in "${libs[@]}"; do
+    if nm "$libdir/$lib" | c++filt | grep "$pattern" ; then
+        echo "Above from $lib"
+    fi
+done
+

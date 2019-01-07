@@ -1,5 +1,5 @@
 set autoindent
-set shiftwidth=4
+set shiftwidth=2
 set expandtab
 set guifont=Monospace\ 8
 syntax enable

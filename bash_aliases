@@ -12,6 +12,9 @@
 # shell that's running, or the hostname for a normal shell.  I do this by
 # having the prompt use the same variable as this file keys off of.
 
+# TODO Use tput to generate the escape sequences.
+# (Example in Arnl/tests/exec.sh.)
+
 # Set the window/icon title:
 PS1='\[\e]0;${SPECIAL_SHELL:-\h}: \w\a\]'
 # Set the first part of the prompt:
@@ -22,12 +25,34 @@ PS1+='\[\e[1;34m\]\w\[\e[0m\]\$ '
 # Set up a special shell if appropriate.
 
 case "$SPECIAL_SHELL" in
-    ChrootXDev)
-        # Chroot cross-development environment
+  Robot-MTX)
+    # Chroot cross-development environment
+    #echo "On the way in."
 
-        #echo "On the way in."
-        cd ~/mobilesoftware
-        source vars
+    # Which repo am I in?  Assume the fourth component of CURDIR.
+    # (CURDIR might be e.g. /home/steve/mobilesoftware/Arnl.)
+    repo=`echo $CURDIR | cut -d/ -s -f4`
+    # If not in a repo, $repo is empty.
+    if [ -z "$repo" ] ; then
+      echo "Not in a repo!  Not setting environment variables."
+    else
+      repo="$HOME/$repo"
+      # Cribbed from Matt LaFary's mobilesoftware/vars.
+      # NOTE: these paths are in the chrooted filesystem.
+      # I removed the buld time use of ARIA, ARNL, and ARAM.
+      # These point to where I have .p files and maps.
+      #export ARIA="$HOME/ubuntu"
+      #export ARNL="$ARIA"
+      #export ARAM="$ARIA"
+      echo "Did not set ARIA, ARNL, ARAM"
+      # vars sets ARIA_INTERNAL_LIBS.  I suspect it's unused.
+      export LD_LIBRARY_PATH="$repo/AramServer/lib:/opt/pylon3/lib:/opt/pylon3/genicam/bin/Linux32_i86"
+      # vars sources a pylon setup script.  I think I don't need it.
+      # vars set PMAKENUM to -j8.  Let's confuse our build time and
+      # run time environments wherever possible!
+    fi
+
+        # Magically go to the right directory after chroot.
         cd $CURDIR
         unset CURDIR
         ;;
@@ -68,7 +93,7 @@ case "$SPECIAL_SHELL" in
             fi
 
             # Incantation to get into the environment
-            sudo -E SPECIAL_SHELL=ChrootXDev CURDIR=$curDir \
+            sudo -E SPECIAL_SHELL=Robot-MTX CURDIR=$curDir \
                     chroot "$root" su -p - $USER
             unset root
         }
