@@ -47,65 +47,85 @@ case "$SPECIAL_SHELL" in
       echo "Did not set ARIA, ARNL, ARAM"
       # vars sets ARIA_INTERNAL_LIBS.  I suspect it's unused.
       export LD_LIBRARY_PATH="$repo/AramServer/lib:/opt/pylon3/lib:/opt/pylon3/genicam/bin/Linux32_i86"
-      # vars sources a pylon setup script.  I think I don't need it.
+      # Needed when building versions that use Pylon.
+      source /opt/pylon3/bin/pylon-setup-env.sh /opt/pylon3
       # vars set PMAKENUM to -j8.  Let's confuse our build time and
       # run time environments wherever possible!
     fi
 
-        # Magically go to the right directory after chroot.
-        cd $CURDIR
-        unset CURDIR
-        ;;
+    # Magically go to the right directory after chroot.
+    cd $CURDIR
+    unset CURDIR
+    ;;
 
-    AramRuntime)
-        # Runtime environment for ARAM software on Ubuntu
+  AramRuntime)
+    # Runtime environment for ARAM software on Ubuntu
 
-        #echo "On the way in."
-        export ARIA="$HOME/home/ubuntu"
-        export ARNL="$ARIA"
-        export LD_LIBRARY_PATH="$HOME/home/ubuntu/lib"
-        ;;
+    #echo "On the way in."
+    export ARIA="$HOME/home/ubuntu"
+    export ARNL="$ARIA"
+    export LD_LIBRARY_PATH="$HOME/home/ubuntu/lib"
+    ;;
 
-    '')
-        # This is a regular shell
-        function bsh () {
-            # Root of the chroot environment
-            root="$HOME/Robot-MTX"
+  '')
+    # This is a regular shell
+    function bsh () {
+      # Root of the chroot environment
+      root="$HOME/Robot-MTX"
 
-            # Try to find the current directory within the chroot
-            absHere=$(pwd -P)
-            case "$absHere" in
-                $root/*)
-                    curDir=${absHere:${#root}}
-                    ;;
-                *)
-                    curDir=.
-            esac
-            unset absHere
+      # Try to find the current directory within the chroot
+      absHere=$(pwd -P)
+      case "$absHere" in
+        $root/*)
+          curDir=${absHere:${#root}}
+          ;;
+        *)
+          curDir=.
+      esac
+      unset absHere
 
-            # Make sure the bind mounts are mounted.
-            if [ ! -e "$root/dev/zero" ]; then
-                sudo mount "$root/dev"
-                sudo mount "$root/proc"
-                sudo mount "$root/sys"
-                sudo mount "$root/tmp"
-                sudo mount --bind ~/bin "$root/home/steve/bin"
-            fi
+      # Make sure the bind mounts are mounted.
+      if [ ! -e "$root/dev/zero" ]; then
+        sudo mount "$root/dev"
+        sudo mount "$root/proc"
+        sudo mount "$root/sys"
+        sudo mount "$root/tmp"
+        sudo mount --bind ~/bin "$root/home/steve/bin"
+      fi
 
-            # Incantation to get into the environment
-            sudo -E SPECIAL_SHELL=Robot-MTX CURDIR=$curDir \
-                    chroot "$root" su -p - $USER
-            unset root
-        }
-        function aramsh () {
-            SPECIAL_SHELL=AramRuntime bash
-        }
-        ;;
+      # passing a command through or be interactive
+      if [ $# -gt 0 ]; then
+        cmd=(-c "source ~/.bash_aliases; $*")
+      else
+        cmd=()
+      fi
+
+      # Incantation to get into the environment
+      sudo -E SPECIAL_SHELL=Robot-MTX CURDIR=$curDir \
+          chroot "$root" su -p -l "${cmd[@]}" $USER
+      unset root cmd
+    }
+    function aramsh () {
+      SPECIAL_SHELL=AramRuntime bash
+    }
+  ;;
 esac
 
 function xvi () {
-    for file in "$@" ; do
-        gvim -f "$file" &>> /tmp/xvi.out &
-    done
+  for file in "$@" ; do
+    gvim -f "$file" &>> /tmp/xvi.out &
+  done
+}
+
+# Dubious value:
+# Edit both dir/src/Foo.cpp and dir/include/Foo.h files:
+#   xxvi dir/Foo
+function xxvi () {
+  for file in "$@" ; do
+    d=$(dirname "$file")
+    f=$(basename "$file")
+    gvim -f "$d/src/$f.cpp" &>> /tmp/xvi.out &
+    gvim -f "$d/include/$f.h" &>> /tmp/xvi.out &
+  done
 }
 
