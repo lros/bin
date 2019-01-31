@@ -33,18 +33,17 @@ case "$SPECIAL_SHELL" in
     # (CURDIR might be e.g. /home/steve/mobilesoftware/Arnl.)
     repo=`echo $CURDIR | cut -d/ -s -f4`
     # If not in a repo, $repo is empty.
-    if [ -z "$repo" ] ; then
-      echo "Not in a repo!  Not setting environment variables."
-    else
+    if [ -n "$repo" ] ; then
       repo="$HOME/$repo"
       # Cribbed from Matt LaFary's mobilesoftware/vars.
       # NOTE: these paths are in the chrooted filesystem.
-      # I removed the buld time use of ARIA, ARNL, and ARAM.
-      # These point to where I have .p files and maps.
-      #export ARIA="$HOME/ubuntu"
-      #export ARNL="$ARIA"
-      #export ARAM="$ARIA"
-      echo "Did not set ARIA, ARNL, ARAM"
+      function setaria() {
+        export ARIA="$repo/Aria"
+        export ARNL="$repo/Arnl"
+        export ARAM="$repo/AramServer"
+        printenv ARIA ARNL ARAM
+      }
+      echo "Use setaria to ARIA, ARNL, ARAM"
       # vars sets ARIA_INTERNAL_LIBS.  I suspect it's unused.
       export LD_LIBRARY_PATH="$repo/AramServer/lib:/opt/pylon3/lib:/opt/pylon3/genicam/bin/Linux32_i86"
       # Needed when building versions that use Pylon.
