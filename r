@@ -111,21 +111,40 @@ The second form deploys the specific tarball to $ROBOTIP.
 EOF
 }
 
-# Args:  TGZ_FILENAME
-#   or:  aram|aramCentral|aramBoth
+# Deploy using scp and symlink.
 function deploy() {
   pathTarball=$(_deploy_args "$@")
   ip=$ROBOTIP
   echo tarball is $pathTarball
-  justTarball=$(dirname "$pathTarball")
-  echo sshpass -proot scp $sshNoHost "$pathTarball" root@$ip:/mnt/rdos
+  justTarball=$(basename "$pathTarball")
+  sshpass -proot scp $sshNoHost "$pathTarball" root@$ip:/mnt/rdos
   linkCmd="ln -s /mnt/rdos/$justTarball /mnt/rdsys/home/admin/"
-  echo sshpass -proot ssh $sshNoHost root@$ip "$linkCmd"
+  sshpass -proot ssh $sshNoHost root@$ip "$linkCmd"
 }
 
-#
-# Deploy aram using the curl method.
-#
+# Deploy using the curl method.
+function deploy_curl() {
+  pathTarball=$(_deploy_args "$@")
+  ip=$ROBOTIP
+  cmd=(
+    curl
+    --insecure
+    -u admin:admin
+    -i
+    -X POST
+    -F upload_file=@"$pathTarball"
+    "https://$ip/cgi-bin/uploadSoftware.cgi"
+  )
+  echo "${cmd[@]}"
+  "${cmd[@]}"
+  sleep 1
+  deploy_curl_status
+}
+
+function deploy_curl_status() {
+  ip=$ROBOTIP
+  curl --insecure -u admin:admin "https://$ip/msgsrv.php"
+}
 
 #
 # Actually parse the command line and do something.
@@ -150,6 +169,12 @@ case "$cmd" in
     ;;
   deploy)
     deploy "$@"
+    ;;
+  deployc)
+    deploy_curl "$@"
+    ;;
+  deploys)
+    deploy_curl_status
     ;;
   *)
     echo "Command not understood: $cmd"

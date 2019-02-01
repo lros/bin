@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Filter typical crap out of a 'git status' command.
+
+function skipIfDir() {
+  while read LINE ; do
+    if [ ! -d "$LINE" ] ; then
+      echo "$LINE"
+    fi
+  done
+}
+
+git status | \
+  grep -v '\.so' | \
+  grep -v '\.o$' | \
+  grep -v '\.lo$' | \
+  grep -v '\.a$' | \
+  grep -v '\.la$' | \
+  grep -v '\.gz$' | \
+  grep -v 'internalLibs' | \
+  grep -v 'internalLibraries' | \
+  skipIfDir
