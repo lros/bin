@@ -1,6 +1,6 @@
 #!/bin/bash
-# Multipurpose script for interacting with robots and EMs.
-# Set ROBOTIP to the IP of your robot or EM, and use these commands.
+# Multipurpose script for interacting with robots and Enterprise Managers.
+# Set ROBOTIP to the IP of your robot, and/or CENTRALIP to the EM.
 
 set -e
 
@@ -33,21 +33,56 @@ function _top() {
   echo "$p"
 }
 
+# Figure out which IP to use.
+# Args: defaultIP
+# Returns defaultIP unless overrideIP is set.
+function _whichIP() {
+  if [ -n "$overrideIP" ]; then
+    echo "$overrideIP"
+  else
+    echo "$1"
+  fi
+}
+
 # ssh options to prevent it from doing host key checking,
 # since the host keys of the VMs change frequently.
 sshNoHost="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 #
-# Print help for given subcommand or all subcommands.
+# Print help for given topic or all topics.
 #
 
 function help() {
-  subcmd=$1
-  allsubcmds=(
+  topic=$1
+  shift || true  # don't fail if shift fails
+  # These are all the subcommands with a help_command function.
+  alltopics=(
     arcl
     ssh
     deploy
   )
+  case "$topic" in
+    '')
+      echo -n "Command:  r help all"
+      for topic in "${alltopics[@]}"; do
+        echo -n "|$topic"
+      done
+      echo
+      echo "Print help on TOPIC, or all topics."
+      ;;
+    all)
+      help
+      for topic in "${alltopics[@]}"; do
+        echo "-------- --------- -------- --------- -------- --------- --------"
+        "help_$topic" || true
+      done
+      ;;
+    *)
+      if ! "help_$topic" 2>/dev/null; then
+        echo "No help for $topic, sorry."
+      fi
+      ;;
+  esac
 }
 
 #
@@ -101,20 +136,22 @@ function _deploy_args() {
 
 function help_deploy() {
   cat <<EOF
-Command:  r deploy (aram|both|aramBoth|central|aramCentral)
-          r deploy PATH_TO_TARBALL
+Command:  r [-r] deploy (aram|both|aramBoth|central|aramCentral)
+          r [-r] deploy PATH_TO_TARBALL
+
+Deploys to the EM unless -r is present.
 
 The first form deploys the latest aram, aramBoth, or aramCentral build
-in this repository, to $ROBOTIP.
+in this repository.
 
-The second form deploys the specific tarball to $ROBOTIP.
+The second form deploys the specific tarball.
 EOF
 }
 
 # Deploy using scp and symlink.
 function deploy() {
   pathTarball=$(_deploy_args "$@")
-  ip=$ROBOTIP
+  ip=$(_whichIP $CENTRALIP)
   echo tarball is $pathTarball
   justTarball=$(basename "$pathTarball")
   sshpass -proot scp $sshNoHost "$pathTarball" root@$ip:/mnt/rdos
@@ -125,7 +162,7 @@ function deploy() {
 # Deploy using the curl method.
 function deploy_curl() {
   pathTarball=$(_deploy_args "$@")
-  ip=$ROBOTIP
+  ip=$(_whichIP $CENTRALIP)
   cmd=(
     curl
     --insecure
@@ -150,33 +187,57 @@ function deploy_curl_status() {
 # Actually parse the command line and do something.
 #
 
-cmd="$1"
-shift || true  # don't fail if shift fails
+function _perform() {
+  cmd="$1"
+  shift || true  # don't fail if shift fails
 
-case "$cmd" in
-  "")
-    if [ -n "$ROBOTIP" ]; then
-      echo "Robot IP is $ROBOTIP"
-    else
-      echo "Robot IP is not set."
-    fi
-    ;;
-  arcl)
-    exec telnet $ROBOTIP 7171
-    ;;
-  ssh)
-    exec ssh root@$ROBOTIP
-    ;;
-  deploy)
-    deploy "$@"
-    ;;
-  deployc)
-    deploy_curl "$@"
-    ;;
-  deploys)
-    deploy_curl_status
-    ;;
-  *)
-    echo "Command not understood: $cmd"
-    ;;
-esac
+  case "$cmd" in
+    "")
+      if [ -z "$ROBOTIP" ]; then
+        ROBOTIP="not set"
+      fi
+      if [ -z "$CENTRALIP" ]; then
+        CENTRALIP="not set"
+      fi
+      echo "ROBOTIP is $ROBOTIP"
+      echo "CENTRALIP is $CENTRALIP"
+      ;;
+    -r)
+      overrideIP=$ROBOTIP
+      _perform "$@"
+      ;;
+    -c)
+      overrideIP=$CENTRALIP
+      _perform "$@"
+      ;;
+    arcl)
+      exec telnet $(_whichIP $ROBOTIP) 7171
+      ;;
+    ssh)
+      exec ssh root@$(_whichIP $ROBOTIP)
+      ;;
+    ping)
+      exec ping $(_whichIP $ROBOTIP)
+      ;;
+    deploy)
+      deploy "$@"
+      ;;
+    deployc)
+      deploy_curl "$@"
+      ;;
+    deploys)
+      deploy_curl_status
+      ;;
+    help)
+      help "$@"
+      ;;
+    *)
+      echo "Command not understood: $cmd"
+      ;;
+  esac
+}
+
+useRobot=false;
+useCentral=false;
+_perform "$@"
+
