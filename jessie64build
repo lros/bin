@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Passes its arguments to Make in the jessie64 environment.
+# Assumes it's run in the root of a repo, as from Eclipse.
+
+schroot -c jessie64 -- bash -c "source vars && make -C AramServer $*"
